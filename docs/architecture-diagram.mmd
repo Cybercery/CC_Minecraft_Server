@@ -1,0 +1,85 @@
+```mermaid
+%% Cloud Minecraft Management Platform - System Architecture & Component Interactions
+graph TB
+    subgraph Client_Layer ["Client & Management Layer"]
+        BrowserAdmin["Administrator / Operator Browser"]
+        MCPlayer["Minecraft Java Game Client"]
+    end
+
+    subgraph Edge_Routing ["Edge & Ingress Routing"]
+        NginxProxy["Nginx Web Server (:3000)"]
+        GamePort["PaperMC TCP Listener (:25565)"]
+    end
+
+    subgraph Frontend_App ["Frontend Application (React 19 + TypeScript)"]
+        ReactApp["Vite Single Page Application"]
+        FirebaseAuth["Firebase Web SDK (OAuth / Password)"]
+        ConsoleTerminal["Streaming Console & RCON Dispatcher"]
+        TelemetryCards["Real-Time Gauges & Metric Visualizer"]
+        BackupManager["S3 Snapshot Catalog & Restore UI"]
+        IAMTable["User Roles & Lockout Protection"]
+    end
+
+    subgraph Backend_Control_Plane ["Backend Control Plane (FastAPI :8000)"]
+        FastAPI["FastAPI Core Application"]
+        SecurityHeaders["OWASP Security Headers Middleware"]
+        RateLimiter["SlowAPI Rate Limiter"]
+        AuthMiddleware["JWT Token & Role-Based Auth Filter"]
+        
+        subgraph Internal_Services ["Internal Domain Services"]
+            DockerService["Docker Management Service"]
+            RconService["mcrcon Socket Client"]
+            BackupService["Backup & Restore Engine"]
+            MetricsCollector["Telemetry Collector (psutil)"]
+            AlertService["Alerting & Threshold Evaluator"]
+            VerificationService["HMAC SHA-256 Code Generator"]
+            AuditService["Structured Audit Logger"]
+        end
+    end
+
+    subgraph Security_Isolation ["Container Security Layer"]
+        DockerSocketProxy["tecnativa/docker-socket-proxy (:2375)"]
+    end
+
+    subgraph Workload_Containers ["Workload & Storage Containers"]
+        PaperMC["PaperMC 1.20+ Minecraft Container (:25565, RCON :25575)"]
+        VerificationPlugin["Java 21 Paper Verification Plugin"]
+        MinIO["MinIO S3-Compatible Object Storage (:9000, :9001)"]
+        SQLiteDB[("SQLite3 Database (WAL Mode)")]
+        HostDocker[("Host Docker Daemon /var/run/docker.sock")]
+    end
+
+    %% Connections
+    BrowserAdmin -->|HTTPS| NginxProxy
+    NginxProxy --> ReactApp
+    ReactApp --> FirebaseAuth
+    ReactApp -->|REST API with Bearer JWT| FastAPI
+
+    MCPlayer -->|Minecraft TCP Protocol| GamePort
+    GamePort --> PaperMC
+    PaperMC --> VerificationPlugin
+
+    FastAPI --> SecurityHeaders
+    SecurityHeaders --> RateLimiter
+    RateLimiter --> AuthMiddleware
+    AuthMiddleware --> Internal_Services
+
+    DockerService -->|Restricted Docker API| DockerSocketProxy
+    DockerSocketProxy -->|Read/Write Restricted Socket| HostDocker
+    HostDocker -.->|Lifecycle Actions: Start/Stop/Logs| PaperMC
+
+    RconService -->|TCP 25575 (RCON Protocol)| PaperMC
+    VerificationPlugin -->|POST /minecraft/plugin/verify| FastAPI
+
+    BackupService -->|RCON: save-off / save-all| RconService
+    BackupService -->|S3 PutObject / GetObject (boto3)| MinIO
+    BackupService -->|Tarball Stream & SHA-256 Checksum| PaperMC
+
+    MetricsCollector -->|RCON: /list player query| RconService
+    MetricsCollector -->|Write Metric Points| SQLiteDB
+    AlertService -->|Read / Write Incidents| SQLiteDB
+
+    VerificationService -->|HMAC SHA-256 State| SQLiteDB
+    AuditService -->|Append Audit Records| SQLiteDB
+    AuthMiddleware -->|Validate Users & Permissions| SQLiteDB
+```

@@ -81,7 +81,7 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 10: Documentation and final demonstration
-- [ ] Write `README.md`, `architecture.md`, `setup-guide.md`, `security.md`, `testing.md`.
-- [ ] Write `docs/iam-permission-matrix.md`, `docs/monitoring.md`, `docs/backup-recovery.md`, `docs/demonstration-guide.md`.
-- [ ] Create architecture diagram `docs/architecture-diagram.mmd`.
-- [ ] Compile Final Report.
+- [x] Write `README.md`, `architecture.md`, `setup-guide.md`, `security.md`, `testing.md`.
+- [x] Write `docs/iam-permission-matrix.md`, `docs/monitoring.md`, `docs/backup-recovery.md`, `docs/demonstration-guide.md`.
+- [x] Create architecture diagram `docs/architecture-diagram.mmd`.
+- [x] Compile Final Report (`FINAL_REPORT.md`).

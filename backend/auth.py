@@ -53,18 +53,68 @@ def verify_token(token: str) -> dict:
             email = parts[2] if len(parts) > 2 else "mock@example.com"
             return {"uid": uid, "email": email}
 
+    # First attempt: Firebase Admin SDK verify_id_token
     try:
         get_firebase_app()
         from firebase_admin import auth
         decoded = auth.verify_id_token(token)
         return decoded
     except Exception as e:
-        logger.error(f"Token verification error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired authentication credentials",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
+        logger.info(f"Firebase Admin SDK verify failed ({e}), attempting public JWT verification...")
+
+    # Fallback: Verify JWT using PyJWT against Google's public certificates (no service account needed)
+    try:
+        import jwt
+        # Unverified decode to inspect headers and claims
+        unverified_header = jwt.get_unverified_header(token)
+        unverified_claims = jwt.decode(token, options={"verify_signature": False})
+        kid = unverified_header.get("kid")
+        alg = unverified_header.get("alg")
+
+        # Fetch Google's public JWK / x509 certs
+        import urllib.request
+        import json
+        jwks_url = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
+        req = urllib.request.Request(jwks_url, headers={"User-Agent": "FastAPI-Backend"})
+        with urllib.request.urlopen(req, timeout=5) as response:
+            jwks_data = json.loads(response.read().decode())
+
+        # Locate matching key
+        matching_key = None
+        for key in jwks_data.get("keys", []):
+            if key.get("kid") == kid:
+                matching_key = key
+                break
+
+        if matching_key:
+            public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(matching_key))
+            project_id = unverified_claims.get("aud") or settings.FIREBASE_PROJECT_ID
+            decoded = jwt.decode(
+                token,
+                public_key,
+                algorithms=[alg or "RS256"],
+                audience=project_id,
+                issuer=f"https://securetoken.google.com/{project_id}"
+            )
+            return {
+                "uid": decoded.get("user_id") or decoded.get("sub"),
+                "email": decoded.get("email") or f"{decoded.get('sub')}@example.com"
+            }
+        elif settings.ENVIRONMENT == "development":
+            # If development and key couldn't be resolved, permit validly formed unverified claims
+            uid = unverified_claims.get("user_id") or unverified_claims.get("sub")
+            email = unverified_claims.get("email") or f"{uid}@example.com"
+            if uid:
+                logger.warning(f"Development fallback: accepting token for {email} ({uid})")
+                return {"uid": uid, "email": email}
+    except Exception as fallback_err:
+        logger.error(f"Public JWT fallback error: {fallback_err}")
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired authentication credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 def get_or_create_user(uid: str, email: str) -> AuthenticatedUser:
     with db_session() as conn:
