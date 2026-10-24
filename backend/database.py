@@ -115,6 +115,26 @@ def init_db():
             """)
             conn.execute("INSERT INTO schema_version (version, description) VALUES (4, 'Backups management schema')")
             current_version = 4
+
+        if current_version < 5:
+            # Apply phase 6 migration: server_metrics
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS server_metrics (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    cpu_percent REAL NOT NULL,
+                    memory_bytes INTEGER NOT NULL,
+                    memory_percent REAL NOT NULL,
+                    disk_used_bytes INTEGER NOT NULL,
+                    disk_total_bytes INTEGER NOT NULL,
+                    disk_percent REAL NOT NULL,
+                    online_players INTEGER NOT NULL,
+                    is_running INTEGER NOT NULL,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON server_metrics(timestamp)")
+            conn.execute("INSERT INTO schema_version (version, description) VALUES (5, 'Metrics and historical tracking schema')")
+            current_version = 5
             
 # Wait to initialize DB until app startup or manually called to avoid issues during module import, 
 # but it's safe if it creates cloud.db in /data as long as /data is writable.

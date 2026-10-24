@@ -50,11 +50,11 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 6: Python monitoring and historical metrics
-- [ ] Create database migrations for `metrics`.
-- [ ] Implement `backend/monitoring/collector.py` and `backend/monitoring/metrics.py`.
-- [ ] Create `backend/routes/metrics.py`.
-- [ ] Run acceptance tests for Phase 6.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Create database migrations for `metrics`.
+- [x] Implement `backend/monitoring/collector.py` and `backend/monitoring/metrics.py`.
+- [x] Create `backend/routes/metrics.py`.
+- [x] Run acceptance tests for Phase 6.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 7: React dashboard and visualization
 - [ ] Set up Vite + React + TypeScript in `frontend/`.

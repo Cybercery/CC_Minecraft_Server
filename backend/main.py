@@ -11,6 +11,7 @@ from backend.routes.auth import router as auth_router
 from backend.routes.users import router as users_router
 from backend.routes.minecraft import router as minecraft_router
 from backend.routes.backups import router as backups_router
+from backend.routes.metrics import router as metrics_router
 from storage.scheduler import start_backup_scheduler
 
 app = FastAPI(title="Minecraft Cloud API")
@@ -19,6 +20,7 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(minecraft_router)
 app.include_router(backups_router)
+app.include_router(metrics_router)
 
 @app.on_event("startup")
 def on_startup():

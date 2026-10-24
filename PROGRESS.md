@@ -40,3 +40,10 @@
 - Configured automated cron scheduler in `storage/scheduler.py` via APScheduler.
 - Mounted `/backups` routes in `backend/routes/backups.py` with RBAC permissions (`backup:read`, `backup:create`, `backup:restore`).
 - Added test suite `backend/tests/test_phase5.py` (all 18 tests across phases 1–5 passing).
+
+## Phase 6: Python Monitoring and Historical Metrics
+- Added database schema migration version 5 for `server_metrics` table with index on timestamp in `backend/database.py`.
+- Implemented `monitoring/collector.py` capturing system CPU percentage, memory consumption, disk utilization, online player counts via RCON, and container status.
+- Implemented `monitoring/metrics.py` providing real-time snapshot reads, historical time-series queries with custom lookback windows, and timestamp-based retention purges.
+- Exposed REST API endpoints `/metrics/current`, `/metrics/history`, and `/metrics/collect` in `backend/routes/metrics.py`.
+- Added test suite `backend/tests/test_phase6.py` (all 21 tests across phases 1–6 passing).
