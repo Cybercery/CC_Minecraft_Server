@@ -1,0 +1,78 @@
+services:
+
+  minio:
+    image: adobe/s3mock:latest
+    environment:
+      initialBuckets: ${MINIO_BUCKET:-minecraft-backups}
+      INITIAL_BUCKETS: ${MINIO_BUCKET:-minecraft-backups}
+    ports:
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9090}:9090"
+      - "127.0.0.1:9191:9191"
+    networks:
+      - cloudnet
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  minio-init:
+    image: amazon/aws-cli:latest
+    depends_on:
+      - minio
+    environment:
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
+    networks:
+      - cloudnet
+    entrypoint: >
+      /bin/sh -c "
+      until aws --endpoint-url http://minio:9090 s3 ls 2>/dev/null; do echo 'Waiting for s3mock...'; sleep 2; done &&
+      aws --endpoint-url http://minio:9090 s3 mb s3://${MINIO_BUCKET:-minecraft-backups} 2>/dev/null || echo 'Bucket already exists or created by initialBuckets'
+      "
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    user: "10001:${DOCKER_GID:-10001}"
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?MINIO_ROOT_PASSWORD is required}
+      MINIO_BUCKET: ${MINIO_BUCKET:-minecraft-backups}
+      MINIO_ENDPOINT: http://minio:9090
+    volumes:
+      - backend_data:/data
+      - backup_scratch:/tmp/scratch
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - cloudnet
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+
+volumes:
+  backend_data:
+  backup_scratch:
+
+networks:
+  cloudnet:
