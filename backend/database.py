@@ -71,6 +71,30 @@ def init_db():
             """)
             conn.execute("INSERT INTO schema_version (version, description) VALUES (2, 'Users and audit logs')")
             current_version = 2
+
+        if current_version < 3:
+            # Apply phase 4 migration: minecraft_links and verification_sessions
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS minecraft_links (
+                    uid TEXT PRIMARY KEY,
+                    minecraft_uuid TEXT UNIQUE NOT NULL,
+                    minecraft_username TEXT NOT NULL,
+                    linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS verification_sessions (
+                    code_hash TEXT PRIMARY KEY,
+                    uid TEXT NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    expires_at TIMESTAMP NOT NULL,
+                    used INTEGER DEFAULT 0,
+                    FOREIGN KEY (uid) REFERENCES users(uid) ON DELETE CASCADE
+                )
+            """)
+            conn.execute("INSERT INTO schema_version (version, description) VALUES (3, 'Minecraft links and verification sessions')")
+            current_version = 3
             
 # Wait to initialize DB until app startup or manually called to avoid issues during module import, 
 # but it's safe if it creates cloud.db in /data as long as /data is writable.

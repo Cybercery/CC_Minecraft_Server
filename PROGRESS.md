@@ -23,3 +23,11 @@
 - Created `backend/routes/auth.py` (`/auth/me`, `/auth/audit-logs`) and `backend/routes/users.py` (`/users`, `/users/{uid}/role`) with self-demote lockout prevention.
 - Retrofitted RBAC permission dependencies and audit logging across all Phase 2 server endpoints.
 - Added comprehensive acceptance test suite in `backend/tests/test_phase3.py` (all 5 tests passing, whole test suite of 14 tests passing).
+
+## Phase 4: Minecraft-to-Web Verification Plugin
+- Added database schema migration version 3 for `minecraft_links` and `verification_sessions` in `backend/database.py`.
+- Built `backend/services/verification_service.py` featuring SHA-256 HMAC verification code hashing, 6-character uppercase codes, TTL expiration, single-use enforcement, and link management.
+- Implemented `/minecraft/verification-code`, `/minecraft/link`, `/minecraft/plugin/verify`, and `/minecraft/plugin/player/{uuid}` in `backend/routes/minecraft.py`.
+- Scaffolded Java 21 Paper plugin in `minecraft-plugin/` with `plugin.yml`, `config.yml`, event listeners (join, move freeze, block break/place cancellation, blindness effect, chat suppression), and `/verify <code>` command.
+- Provided build script `scripts/build-plugin.sh` supporting native Maven and Docker builds.
+- Added acceptance test in `backend/tests/test_phase4.py` (all 15 tests across phases 1–4 passing).

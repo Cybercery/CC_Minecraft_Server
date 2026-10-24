@@ -31,15 +31,15 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 4: Minecraft-to-web verification plugin
-- [ ] Create database migrations for `minecraft_links` and `verification_sessions`.
-- [ ] Implement `backend/services/verification_service.py`.
-- [ ] Create `backend/routes/minecraft.py`.
-- [ ] Set up `minecraft-plugin/` (Maven, Java 21, Paper API).
-- [ ] Implement plugin join logic, API interaction, and restrictions.
-- [ ] Implement plugin verification polling and release logic.
-- [ ] Write `scripts/build-plugin.sh`.
-- [ ] Run acceptance tests for Phase 4.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Create database migrations for `minecraft_links` and `verification_sessions`.
+- [x] Implement `backend/services/verification_service.py`.
+- [x] Create `backend/routes/minecraft.py`.
+- [x] Set up `minecraft-plugin/` (Maven, Java 21, Paper API).
+- [x] Implement plugin join logic, API interaction, and restrictions.
+- [x] Implement plugin verification polling and release logic.
+- [x] Write `scripts/build-plugin.sh`.
+- [x] Run acceptance tests for Phase 4.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 5: MinIO storage and automated backups
 - [ ] Create database migrations for `backups`.

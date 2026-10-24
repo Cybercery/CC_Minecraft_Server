@@ -1,0 +1,5 @@
+api_url: "http://backend:8000/minecraft/plugin"
+api_key: ""
+unverified_freeze: true
+unverified_blindness: true
+poll_interval_seconds: 5
