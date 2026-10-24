@@ -47,3 +47,19 @@
 - Implemented `monitoring/metrics.py` providing real-time snapshot reads, historical time-series queries with custom lookback windows, and timestamp-based retention purges.
 - Exposed REST API endpoints `/metrics/current`, `/metrics/history`, and `/metrics/collect` in `backend/routes/metrics.py`.
 - Added test suite `backend/tests/test_phase6.py` (all 21 tests across phases 1–6 passing).
+
+## Phase 7: React Dashboard and Visualization
+- Initialized React 19 + TypeScript + Vite modern web application in `frontend/`.
+- Configured Firebase Web SDK supporting both Google OAuth popup authentication and Email/Password sign in.
+- Built design system in `frontend/src/index.css` featuring dark-mode glassmorphism cards, Plus Jakarta Sans & JetBrains Mono typography, status badges, and action buttons.
+- Implemented modular, role-aware dashboard views:
+  - `AuthModal.tsx`: Google and Email/Password authentication.
+  - `Sidebar.tsx`: Role-filtered navigation and user profile status.
+  - `ServerControl.tsx`: Live state indicator, container start/stop/restart controls, live 4-second auto-refreshing console terminal, and RCON command dispatch.
+  - `MonitoringDashboard.tsx`: Telemetry cards (CPU, RAM, Disk, Online players) and historical records table.
+  - `BackupsManagement.tsx`: Snapshot creation, MinIO S3 object browser, SHA256 integrity display, and single-click restore.
+  - `MinecraftLinking.tsx`: 6-character code generator with TTL expiration and account linking guide.
+  - `UserManagement.tsx`: IAM access management table for viewing and assigning Administrator, Operator, and User roles.
+  - `AuditLogsViewer.tsx`: Structured log inspection table.
+- Added multi-stage `frontend/Dockerfile` with Nginx production serving and integrated `frontend` into `docker-compose.yml`.
+- Verified clean production compilation with `npm run build` in `frontend/`.

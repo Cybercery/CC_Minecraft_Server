@@ -93,6 +93,20 @@ services:
     security_opt:
       - no-new-privileges:true
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-5173}:80"
+    networks:
+      - cloudnet
+    depends_on:
+      - backend
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
 volumes:
   backend_data:
   backup_scratch:

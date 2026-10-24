@@ -57,12 +57,12 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 7: React dashboard and visualization
-- [ ] Set up Vite + React + TypeScript in `frontend/`.
-- [ ] Write `frontend/Dockerfile`.
-- [ ] Add `frontend` service to `docker-compose.yml`.
-- [ ] Implement dashboard pages (Auth, Overview, Server Management, Monitoring, Backups, IAM, Minecraft Linking).
-- [ ] Run acceptance tests for Phase 7.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Set up Vite + React + TypeScript in `frontend/`.
+- [x] Write `frontend/Dockerfile`.
+- [x] Add `frontend` service to `docker-compose.yml`.
+- [x] Implement dashboard pages (Auth, Overview, Server Management, Monitoring, Backups, IAM, Minecraft Linking).
+- [x] Run acceptance tests for Phase 7.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 8: Alerts, audit logging, and security hardening
 - [ ] Create database migrations for `alerts`.
