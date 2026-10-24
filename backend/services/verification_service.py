@@ -120,6 +120,18 @@ class VerificationService:
             row = cursor.fetchone()
             return dict(row) if row else None
 
+    @classmethod
+    def lookup_code(cls, raw_code: str) -> Optional[dict]:
+        """Look up a verification session by raw code without consuming it."""
+        code_hash = cls._hash_code(raw_code)
+        with db_session() as conn:
+            cursor = conn.execute(
+                "SELECT code_hash, uid, expires_at, used FROM verification_sessions WHERE code_hash = ?",
+                (code_hash,)
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
     @staticmethod
     def unlink_by_uid(uid: str) -> bool:
         with db_session() as conn:

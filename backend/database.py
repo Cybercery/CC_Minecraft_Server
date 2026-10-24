@@ -135,6 +135,23 @@ def init_db():
             conn.execute("CREATE INDEX IF NOT EXISTS idx_metrics_timestamp ON server_metrics(timestamp)")
             conn.execute("INSERT INTO schema_version (version, description) VALUES (5, 'Metrics and historical tracking schema')")
             current_version = 5
+
+        if current_version < 6:
+            # Apply phase 8 migration: alerts
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS alerts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    alert_type TEXT NOT NULL,
+                    severity TEXT NOT NULL DEFAULT 'warning',
+                    message TEXT NOT NULL,
+                    value REAL NOT NULL,
+                    threshold REAL NOT NULL,
+                    acknowledged INTEGER DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute("INSERT INTO schema_version (version, description) VALUES (6, 'Alerts schema')")
+            current_version = 6
             
 # Wait to initialize DB until app startup or manually called to avoid issues during module import, 
 # but it's safe if it creates cloud.db in /data as long as /data is writable.

@@ -65,20 +65,20 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 8: Alerts, audit logging, and security hardening
-- [ ] Create database migrations for `alerts`.
-- [ ] Implement `backend/monitoring/alerts.py`.
-- [ ] Update audit logging to cover all privileged actions.
-- [ ] Implement security hardening (docker-socket-proxy, bucket-scoped service account, rate limiting, security headers).
-- [ ] Run acceptance tests for Phase 8.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Create database migrations for `alerts`.
+- [x] Implement `backend/monitoring/alerts.py`.
+- [x] Update audit logging to cover all privileged actions.
+- [x] Implement security hardening (docker-socket-proxy, bucket-scoped service account, rate limiting, security headers).
+- [x] Run acceptance tests for Phase 8.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 9: Integration testing and disaster recovery
-- [ ] Write unit and API tests in `backend/tests/`.
-- [ ] Write `scripts/integration-test.sh`.
-- [ ] Write `scripts/dr-drill.sh`.
-- [ ] Perform DR scenarios.
-- [ ] Run acceptance tests for Phase 9.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Write unit and API tests in `backend/tests/`.
+- [x] Write `scripts/integration-test.sh`.
+- [x] Write `scripts/dr-drill.sh`.
+- [x] Perform DR scenarios.
+- [x] Run acceptance tests for Phase 9.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 10: Documentation and final demonstration
 - [ ] Write `README.md`, `architecture.md`, `setup-guide.md`, `security.md`, `testing.md`.

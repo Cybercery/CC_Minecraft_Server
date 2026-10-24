@@ -50,17 +50,19 @@ def update_user_role(
         if target_uid == current_user.uid and request.role != Role.ADMIN.value:
             raise HTTPException(status_code=400, detail="Cannot demote yourself from Administrator")
 
+        old_role = target_user["role"]
         conn.execute("UPDATE users SET role = ? WHERE uid = ?", (request.role, target_uid))
         cursor = conn.execute("SELECT uid, email, role, created_at, last_login FROM users WHERE uid = ?", (target_uid,))
-        updated_user = cursor.fetchone()
+        updated_user = dict(cursor.fetchone())
 
-        audit_service.log_action(
-            action="update_role",
-            resource=f"users/{target_uid}",
-            status="success",
-            uid=current_user.uid,
-            email=current_user.email,
-            details={"old_role": target_user["role"], "new_role": request.role}
-        )
+    # Audit outside db_session to avoid SQLite lock contention
+    audit_service.log_action(
+        action="role_change",
+        resource=f"users/{target_uid}",
+        status="success",
+        uid=current_user.uid,
+        email=current_user.email,
+        details={"old_role": old_role, "new_role": request.role}
+    )
 
-        return dict(updated_user)
+    return updated_user

@@ -63,3 +63,12 @@
   - `AuditLogsViewer.tsx`: Structured log inspection table.
 - Added multi-stage `frontend/Dockerfile` with Nginx production serving and integrated `frontend` into `docker-compose.yml`.
 - Verified clean production compilation with `npm run build` in `frontend/`.
+
+## Phase 9: Integration Testing and Disaster Recovery
+- Created comprehensive end-to-end integration test suite `backend/tests/test_phase9.py` with 16 tests spanning: unauthenticated access checks, RBAC enforcement, admin bootstrap provisioning, role-change audit logging, backup/restore full lifecycle, metrics collection, alert evaluation and acknowledgment, verification code lifecycle, health endpoint, and security headers.
+- Fixed `monitoring/alerts.py` threshold reads to be dynamic from `os.environ` (enabling test override of settings singleton).
+- Fixed `backend/routes/users.py` to call `audit_service.log_action()` outside the `db_session` block to prevent SQLite WAL lock contention; renamed action to `role_change` for semantic clarity.
+- Added `lookup_code()` method to `backend/services/verification_service.py` for non-destructive code inspection.
+- Wrote `scripts/integration-test.sh`: runs all Python test suites, optional Docker Compose smoke test, and frontend production build verification.
+- Wrote `scripts/dr-drill.sh`: Disaster Recovery drill script covering 6 scenarios — golden backup/restore path, RCON graceful degradation, metrics continuity, alert audit trail, health endpoint resilience, and RBAC boundary enforcement — all via live HTTP calls against the running stack.
+- All 38 tests across phases 1–9 passing.
