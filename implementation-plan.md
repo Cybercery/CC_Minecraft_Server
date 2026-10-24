@@ -12,13 +12,13 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 2: Minecraft deployment and management
-- [ ] Add `minecraft` service to `docker-compose.yml`.
-- [ ] Implement `backend/services/docker_service.py`.
-- [ ] Implement `backend/services/rcon_service.py`.
-- [ ] Create `backend/routes/server.py` with endpoints.
-- [ ] Update `main.py` to include server routes.
-- [ ] Run acceptance tests for Phase 2.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Add `minecraft` service to `docker-compose.yml`.
+- [x] Implement `backend/services/docker_service.py`.
+- [x] Implement `backend/services/rcon_service.py`.
+- [x] Create `backend/routes/server.py` with endpoints.
+- [x] Update `main.py` to include server routes.
+- [x] Run acceptance tests for Phase 2.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 3: Firebase Authentication and IAM/RBAC
 - [ ] Implement `backend/auth.py`.
