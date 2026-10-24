@@ -31,6 +31,8 @@ class TestPhase2(unittest.TestCase):
 
     def setUp(self):
         self.client = TestClient(app)
+        self.admin_headers = {"Authorization": "Bearer mock:admin_uid:admin@example.com"}
+        self.user_headers = {"Authorization": "Bearer mock:user_uid:regular@example.com"}
 
     @patch("backend.routes.server.docker_service.get_status")
     @patch("backend.routes.server.rcon_service.get_player_list")
@@ -48,7 +50,7 @@ class TestPhase2(unittest.TestCase):
             "players": ["Alex", "Steve"]
         }
 
-        response = self.client.get("/server/status")
+        response = self.client.get("/server/status", headers=self.user_headers)
         self.assertEqual(response.status_code, 200)
         data = response.json()
         self.assertEqual(data["status"], "running")
@@ -59,40 +61,45 @@ class TestPhase2(unittest.TestCase):
     @patch("backend.routes.server.docker_service.start_server")
     def test_start_server(self, mock_start):
         mock_start.return_value = {"message": "Server started", "status": "running"}
-        response = self.client.post("/server/start")
+        # Regular user denied
+        res_denied = self.client.post("/server/start", headers=self.user_headers)
+        self.assertEqual(res_denied.status_code, 403)
+
+        # Admin allowed
+        response = self.client.post("/server/start", headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "running")
 
     @patch("backend.routes.server.docker_service.stop_server")
     def test_stop_server(self, mock_stop):
         mock_stop.return_value = {"message": "Server stopped", "status": "exited"}
-        response = self.client.post("/server/stop")
+        response = self.client.post("/server/stop", headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "exited")
 
     @patch("backend.routes.server.docker_service.restart_server")
     def test_restart_server(self, mock_restart):
         mock_restart.return_value = {"message": "Server restarted", "status": "running"}
-        response = self.client.post("/server/restart")
+        response = self.client.post("/server/restart", headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "running")
 
     @patch("backend.routes.server.docker_service.get_logs")
     def test_get_logs(self, mock_logs):
         mock_logs.return_value = ["[INFO] Starting server", "[INFO] Done!"]
-        response = self.client.get("/server/logs?tail=2")
+        response = self.client.get("/server/logs?tail=2", headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["logs"], ["[INFO] Starting server", "[INFO] Done!"])
 
     @patch("backend.routes.server.rcon_service.execute_command")
     def test_execute_rcon_command(self, mock_rcon):
         mock_rcon.return_value = "Set time to 1000"
-        response = self.client.post("/server/rcon", json={"command": "time set day"})
+        response = self.client.post("/server/rcon", json={"command": "time set day"}, headers=self.admin_headers)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["response"], "Set time to 1000")
 
     def test_execute_rcon_empty_command(self):
-        response = self.client.post("/server/rcon", json={"command": "   "})
+        response = self.client.post("/server/rcon", json={"command": "   "}, headers=self.admin_headers)
         self.assertEqual(response.status_code, 400)
 
 if __name__ == "__main__":

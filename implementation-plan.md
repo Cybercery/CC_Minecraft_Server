@@ -21,14 +21,14 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 3: Firebase Authentication and IAM/RBAC
-- [ ] Implement `backend/auth.py`.
-- [ ] Implement `backend/permissions.py`.
-- [ ] Create database migrations for `users` and `audit_logs`.
-- [ ] Implement `backend/services/audit_service.py`.
-- [ ] Create `backend/routes/auth.py` and `backend/routes/users.py`.
-- [ ] Retrofit authorization to Phase 2 endpoints.
-- [ ] Run acceptance tests for Phase 3.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Implement `backend/auth.py`.
+- [x] Implement `backend/permissions.py`.
+- [x] Create database migrations for `users` and `audit_logs`.
+- [x] Implement `backend/services/audit_service.py`.
+- [x] Create `backend/routes/auth.py` and `backend/routes/users.py`.
+- [x] Retrofit authorization to Phase 2 endpoints.
+- [x] Run acceptance tests for Phase 3.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 4: Minecraft-to-web verification plugin
 - [ ] Create database migrations for `minecraft_links` and `verification_sessions`.

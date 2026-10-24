@@ -44,6 +44,33 @@ def init_db():
         if current_version < 1:
             # Apply phase 1 migration
             conn.execute("INSERT INTO schema_version (version, description) VALUES (1, 'Initial phase 1 schema')")
+            current_version = 1
+            
+        if current_version < 2:
+            # Apply phase 3 migration: users and audit_logs
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    uid TEXT PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    role TEXT NOT NULL DEFAULT 'User',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    last_login TIMESTAMP
+                )
+            """)
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS audit_logs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    uid TEXT,
+                    email TEXT,
+                    action TEXT NOT NULL,
+                    resource TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    details TEXT,
+                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            conn.execute("INSERT INTO schema_version (version, description) VALUES (2, 'Users and audit logs')")
+            current_version = 2
             
 # Wait to initialize DB until app startup or manually called to avoid issues during module import, 
 # but it's safe if it creates cloud.db in /data as long as /data is writable.

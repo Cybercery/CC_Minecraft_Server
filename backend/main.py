@@ -7,9 +7,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 from backend.routes.server import router as server_router
+from backend.routes.auth import router as auth_router
+from backend.routes.users import router as users_router
 
 app = FastAPI(title="Minecraft Cloud API")
 app.include_router(server_router)
+app.include_router(auth_router)
+app.include_router(users_router)
 
 class HealthCheckResponse(BaseModel):
     status: str

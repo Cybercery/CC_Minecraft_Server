@@ -14,3 +14,12 @@
 - Built server management REST API in `backend/routes/server.py` (`/server/status`, `/server/start`, `/server/stop`, `/server/restart`, `/server/logs`, `/server/rcon`).
 - Mounted server routes into FastAPI application in `backend/main.py`.
 - Added test suite `backend/tests/test_phase2.py` passing all 7 tests for server control, player query, and RCON endpoints.
+
+## Phase 3: Firebase Authentication and IAM/RBAC
+- Implemented `backend/auth.py` providing Firebase token verification, dev mock token support, and automatic bootstrap Administrator provisioning (`BOOTSTRAP_ADMIN_EMAIL`).
+- Defined 3-tier Role-Based Access Control matrix (Administrator, Operator, User) in `backend/permissions.py`.
+- Added database schema migration version 2 for `users` and `audit_logs` tables in `backend/database.py`.
+- Created structured audit logging service `backend/services/audit_service.py` to persist administrative, authentication, and execution events.
+- Created `backend/routes/auth.py` (`/auth/me`, `/auth/audit-logs`) and `backend/routes/users.py` (`/users`, `/users/{uid}/role`) with self-demote lockout prevention.
+- Retrofitted RBAC permission dependencies and audit logging across all Phase 2 server endpoints.
+- Added comprehensive acceptance test suite in `backend/tests/test_phase3.py` (all 5 tests passing, whole test suite of 14 tests passing).
