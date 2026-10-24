@@ -31,3 +31,12 @@
 - Scaffolded Java 21 Paper plugin in `minecraft-plugin/` with `plugin.yml`, `config.yml`, event listeners (join, move freeze, block break/place cancellation, blindness effect, chat suppression), and `/verify <code>` command.
 - Provided build script `scripts/build-plugin.sh` supporting native Maven and Docker builds.
 - Added acceptance test in `backend/tests/test_phase4.py` (all 15 tests across phases 1–4 passing).
+
+## Phase 5: MinIO Storage and Automated Backups
+- Added database schema migration version 4 for `backups` table tracking S3 keys, file sizes, SHA256 checksums, and trigger types.
+- Implemented `storage/backup.py` with RCON save flush coordination, `.tar.gz` gzip compression, SHA256 integrity calculation, and MinIO S3 upload.
+- Implemented `storage/restore.py` verifying SHA256 checksums against corruption, preventing tar path-traversal attacks, and safely controlling Minecraft server downtime during restoration.
+- Implemented `storage/retention.py` enforcing backup count limits (`BACKUP_RETENTION_COUNT`) by deleting old backup archives from MinIO and records from SQLite.
+- Configured automated cron scheduler in `storage/scheduler.py` via APScheduler.
+- Mounted `/backups` routes in `backend/routes/backups.py` with RBAC permissions (`backup:read`, `backup:create`, `backup:restore`).
+- Added test suite `backend/tests/test_phase5.py` (all 18 tests across phases 1–5 passing).

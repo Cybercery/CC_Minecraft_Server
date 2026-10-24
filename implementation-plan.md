@@ -42,12 +42,12 @@
 - [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 5: MinIO storage and automated backups
-- [ ] Create database migrations for `backups`.
-- [ ] Implement `backend/storage/backup.py`, `backend/storage/restore.py`, `backend/storage/retention.py`.
-- [ ] Create `backend/routes/backups.py`.
-- [ ] Implement scheduler for backups.
-- [ ] Run acceptance tests for Phase 5.
-- [ ] Document in `PROGRESS.md` and commit.
+- [x] Create database migrations for `backups`.
+- [x] Implement `backend/storage/backup.py`, `backend/storage/restore.py`, `backend/storage/retention.py`.
+- [x] Create `backend/routes/backups.py`.
+- [x] Implement scheduler for backups.
+- [x] Run acceptance tests for Phase 5.
+- [x] Document in `PROGRESS.md` and commit.
 
 ## Phase 6: Python monitoring and historical metrics
 - [ ] Create database migrations for `metrics`.

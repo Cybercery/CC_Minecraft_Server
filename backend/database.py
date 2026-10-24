@@ -95,6 +95,26 @@ def init_db():
             """)
             conn.execute("INSERT INTO schema_version (version, description) VALUES (3, 'Minecraft links and verification sessions')")
             current_version = 3
+
+        if current_version < 4:
+            # Apply phase 5 migration: backups
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS backups (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    filename TEXT UNIQUE NOT NULL,
+                    s3_key TEXT UNIQUE NOT NULL,
+                    size_bytes INTEGER NOT NULL,
+                    checksum_sha256 TEXT NOT NULL,
+                    backup_type TEXT NOT NULL DEFAULT 'manual',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    created_by_uid TEXT,
+                    created_by_email TEXT,
+                    status TEXT NOT NULL DEFAULT 'completed',
+                    metadata TEXT
+                )
+            """)
+            conn.execute("INSERT INTO schema_version (version, description) VALUES (4, 'Backups management schema')")
+            current_version = 4
             
 # Wait to initialize DB until app startup or manually called to avoid issues during module import, 
 # but it's safe if it creates cloud.db in /data as long as /data is writable.

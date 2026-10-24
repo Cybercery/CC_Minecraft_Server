@@ -25,8 +25,17 @@ def get_firebase_app():
         try:
             import firebase_admin
             from firebase_admin import credentials
-            if settings.GOOGLE_APPLICATION_CREDENTIALS and os.path.exists(settings.GOOGLE_APPLICATION_CREDENTIALS):
-                cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
+            cred_path = settings.GOOGLE_APPLICATION_CREDENTIALS
+            local_fallback = os.path.join(os.path.dirname(__file__), "secrets", "firebase-service-account.json")
+            target_cred = None
+
+            if cred_path and os.path.exists(cred_path):
+                target_cred = cred_path
+            elif os.path.exists(local_fallback):
+                target_cred = local_fallback
+
+            if target_cred:
+                cred = credentials.Certificate(target_cred)
                 firebase_admin.initialize_app(cred, {"projectId": settings.FIREBASE_PROJECT_ID})
             else:
                 firebase_admin.initialize_app(options={"projectId": settings.FIREBASE_PROJECT_ID})
