@@ -14,13 +14,15 @@ This guide covers complete instructions for installing, configuring, and operati
 ### Software Requirements
 - **Docker Engine**: version 24.0.0 or higher
 - **Docker Compose**: version 2.20.0 or higher
-- **Network**: Open ports:
-  - `3000`: React Web Dashboard (HTTP)
-  - `8000`: FastAPI Backend REST API
-  - `9000`: MinIO S3 API
-  - `9001`: MinIO Web Console
+- **Network Ports**:
+  - `5173`: React Web Dashboard & Nginx Reverse Proxy (HTTP)
+  - `8000`: FastAPI Backend REST API (127.0.0.1 and internal Docker network)
+  - `9090` / `9001`: MinIO S3 Mock Storage & Console (127.0.0.1)
   - `25565`: Minecraft Game Port (TCP)
-  - `25575`: RCON Remote Console (Internal Docker network only in production)
+  - `25575`: RCON Remote Console (127.0.0.1 and internal Docker network)
+
+> [!TIP]
+> For instructions on exposing your server and dashboard to players across the public internet for free using Cloudflare Tunnels and Playit.gg, consult the [Hosting & Cloud Deployment Guide](file:///e:/minecraft_server_project/hosting-guide.md).
 
 ---
 

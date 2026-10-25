@@ -17,7 +17,7 @@ docker compose ps
 ```
 
 ### 1.2 Access the Dashboards
-- Open the Web Dashboard in your browser: [http://localhost:3000](http://localhost:3000)
+- Open the Web Dashboard in your browser: [http://localhost:5173](http://localhost:5173) (or your Cloudflare Tunnel URL)
 - Open the FastAPI Swagger Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Open the MinIO Console: [http://localhost:9001](http://localhost:9001) (Credentials in `.env`)
 
@@ -26,7 +26,7 @@ docker compose ps
 ## 2. Demonstration Flow
 
 ### Step 1: Authentication & Bootstrap Admin Assignment
-1. On [http://localhost:3000](http://localhost:3000), click **Sign In**.
+1. On [http://localhost:5173](http://localhost:5173), click **Sign In**.
 2. Sign in with the configured `BOOTSTRAP_ADMIN_EMAIL` (e.g. `admin@example.com`).
 3. **Observe**: The sidebar profile badge displays `ADMINISTRATOR` status and unlocks all administrative sections (**Server Controls**, **Monitoring**, **Backups**, **IAM Management**, **Audit Logs**, **Player Verification**).
 4. Demonstrate that a regular user logging in with another email receives the `USER` role with read-only views.
