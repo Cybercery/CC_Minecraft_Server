@@ -41,6 +41,11 @@ def verify_plugin_api_key(x_plugin_api_key: Optional[str] = Header(None, alias="
 def generate_verification_code(
     user: AuthenticatedUser = Depends(require_permission("minecraft:link"))
 ):
+    if not verification_service.check_generate_rate_limit(user.uid):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Please wait before generating another verification code."
+        )
     code, expires_at = verification_service.generate_code(user.uid)
     return GenerateCodeResponse(
         code=code,

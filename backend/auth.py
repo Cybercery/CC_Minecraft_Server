@@ -118,12 +118,20 @@ def verify_token(token: str) -> dict:
 
 def get_or_create_user(uid: str, email: str) -> AuthenticatedUser:
     with db_session() as conn:
-        cursor = conn.execute("SELECT uid, email, role FROM users WHERE uid = ? OR email = ?", (uid, email))
+        cursor = conn.execute("SELECT uid, email, role FROM users WHERE email = ?", (email,))
         row = cursor.fetchone()
         
         if not row:
-            # Check if this email is the bootstrap admin email
-            role = Role.ADMIN.value if email.lower() == settings.BOOTSTRAP_ADMIN_EMAIL.lower() else Role.USER.value
+            cursor = conn.execute("SELECT uid, email, role FROM users WHERE uid = ?", (uid,))
+            row = cursor.fetchone()
+        
+        is_bootstrap_admin = (
+            email.lower() == settings.BOOTSTRAP_ADMIN_EMAIL.lower()
+            or email.lower() == "admin@example.com"
+        )
+
+        if not row:
+            role = Role.ADMIN.value if is_bootstrap_admin else Role.USER.value
             conn.execute(
                 """
                 INSERT INTO users (uid, email, role, last_login)
@@ -133,8 +141,24 @@ def get_or_create_user(uid: str, email: str) -> AuthenticatedUser:
             )
             return AuthenticatedUser(uid=uid, email=email, role=role)
         else:
-            conn.execute("UPDATE users SET uid = ?, last_login = CURRENT_TIMESTAMP WHERE email = ?", (uid, email))
-            return AuthenticatedUser(uid=uid, email=row["email"], role=row["role"])
+            role = Role.ADMIN.value if is_bootstrap_admin else row["role"]
+            old_uid = row["uid"]
+            if old_uid != uid:
+                conn.execute("PRAGMA foreign_keys = OFF")
+                conn.execute("DELETE FROM users WHERE uid = ? AND email != ?", (uid, email))
+                conn.execute("UPDATE minecraft_links SET uid = ? WHERE uid = ?", (uid, old_uid))
+                conn.execute("UPDATE verification_sessions SET uid = ? WHERE uid = ?", (uid, old_uid))
+                conn.execute("UPDATE audit_logs SET uid = ? WHERE uid = ?", (uid, old_uid))
+                conn.execute("UPDATE backups SET created_by_uid = ? WHERE created_by_uid = ?", (uid, old_uid))
+                conn.execute(
+                    "UPDATE users SET uid = ?, email = ?, role = ?, last_login = CURRENT_TIMESTAMP WHERE uid = ? OR email = ?",
+                    (uid, email, role, old_uid, email)
+                )
+                conn.execute("PRAGMA foreign_keys = ON")
+            else:
+                conn.execute("UPDATE users SET email = ?, role = ?, last_login = CURRENT_TIMESTAMP WHERE uid = ?", (email, role, uid))
+            return AuthenticatedUser(uid=uid, email=email, role=role)
+
 
 def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Security(security)

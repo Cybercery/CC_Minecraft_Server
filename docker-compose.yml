@@ -41,6 +41,8 @@ services:
     user: "10001:${DOCKER_GID:-10001}"
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
+    env_file:
+      - .env
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-development}
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:?MINIO_ROOT_USER is required}
@@ -78,10 +80,15 @@ services:
       VERSION: ${MC_VERSION:-1.20.4}
       MEMORY: ${MC_MEMORY:-2G}
       MAX_PLAYERS: ${MC_MAX_PLAYERS:-20}
+      ONLINE_MODE: ${MINECRAFT_ONLINE_MODE:-true}
+      ENFORCE_SECURE_PROFILE: ${ENFORCE_SECURE_PROFILE:-false}
+      OVERRIDE_SERVER_PROPERTIES: "true"
       ENABLE_RCON: "true"
       RCON_PASSWORD: ${RCON_PASSWORD}
       RCON_PORT: 25575
       TYPE: PAPER
+      PLUGIN_API_KEY: ${PLUGIN_API_KEY}
+
     ports:
       - "${MC_PORT:-25565}:25565"
       - "127.0.0.1:${RCON_PORT:-25575}:25575"

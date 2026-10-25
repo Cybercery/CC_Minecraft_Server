@@ -1,8 +1,23 @@
+import threading
+import signal
+import logging
 from mcrcon import MCRcon
 from backend.config import settings
-import logging
 
 logger = logging.getLogger(__name__)
+
+# MCRcon registers a signal handler in __init__ which fails if called from a worker thread
+_orig_signal = signal.signal
+def _safe_signal(sig, handler):
+    if threading.current_thread() is threading.main_thread():
+        try:
+            return _orig_signal(sig, handler)
+        except Exception:
+            return None
+    return None
+
+signal.signal = _safe_signal
+
 
 class RconService:
     def __init__(self, host: str = "minecraft", port: int = 25575, password: str = None):

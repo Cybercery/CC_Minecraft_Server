@@ -24,6 +24,7 @@ class ServerStatusResponse(BaseModel):
     image: Optional[str] = None
     players_online: int = 0
     players: List[str] = []
+    online_mode: bool = True
 
 @router.get("/status", response_model=ServerStatusResponse)
 def get_server_status(user: AuthenticatedUser = Depends(require_permission("server:read"))):
@@ -43,8 +44,16 @@ def get_server_status(user: AuthenticatedUser = Depends(require_permission("serv
             name=status_info.get("name", ""),
             image=status_info.get("image"),
             players_online=players_online,
-            players=players
+            players=players,
+            online_mode=status_info.get("online_mode", True)
         )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/properties")
+def get_server_properties(user: AuthenticatedUser = Depends(require_permission("server:read"))):
+    try:
+        return docker_service.get_server_properties()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

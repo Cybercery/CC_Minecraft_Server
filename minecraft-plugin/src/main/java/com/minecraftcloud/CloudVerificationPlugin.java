@@ -48,7 +48,13 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
     public void onEnable() {
         saveDefaultConfig();
         this.apiUrl = getConfig().getString("api_url", "http://backend:8000/minecraft/plugin");
-        this.apiKey = getConfig().getString("api_key", "");
+        String configuredKey = getConfig().getString("api_key", "");
+        String envKey = System.getenv("PLUGIN_API_KEY");
+        if (envKey != null && !envKey.trim().isEmpty()) {
+            this.apiKey = envKey.trim();
+        } else {
+            this.apiKey = configuredKey;
+        }
         this.freeze = getConfig().getBoolean("unverified_freeze", true);
         this.blindness = getConfig().getBoolean("unverified_blindness", true);
 
@@ -61,8 +67,9 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
             getCommand("verify").setExecutor(this);
         }
 
-        getLogger().info("CloudVerificationPlugin enabled. API: " + apiUrl);
+        getLogger().info("CloudVerificationPlugin enabled. API: " + apiUrl + ", API Key set: " + (!this.apiKey.isEmpty()));
     }
+
 
     @Override
     public void onDisable() {
@@ -187,14 +194,14 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
         player.sendMessage(ChatColor.YELLOW + "Verifying code...");
 
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> {
-            boolean success = submitVerification(code, player.getUniqueId(), player.getName());
+            String error = submitVerification(code, player.getUniqueId(), player.getName());
             Bukkit.getScheduler().runTask(this, () -> {
-                if (success) {
+                if (error == null) {
                     unverifiedPlayers.remove(player.getUniqueId());
                     removeRestrictions(player);
                     player.sendMessage(ChatColor.GREEN + "Account successfully linked and verified! Have fun!");
                 } else {
-                    player.sendMessage(ChatColor.RED + "Verification failed. Invalid or expired code.");
+                    player.sendMessage(ChatColor.RED + "Verification failed: " + error);
                 }
             });
         });
@@ -215,6 +222,8 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
             if (response.statusCode() == 200) {
                 JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
                 return json.has("verified") && json.get("verified").getAsBoolean();
+            } else {
+                getLogger().warning("Player check HTTP " + response.statusCode() + ": " + response.body());
             }
         } catch (Exception e) {
             getLogger().warning("Error querying player verification: " + e.getMessage());
@@ -222,7 +231,7 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
         return false;
     }
 
-    private boolean submitVerification(String code, UUID uuid, String username) {
+    private String submitVerification(String code, UUID uuid, String username) {
         try {
             JsonObject payload = new JsonObject();
             payload.addProperty("code", code);
@@ -238,10 +247,22 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.statusCode() == 200;
+            if (response.statusCode() == 200) {
+                return null;
+            } else {
+                getLogger().warning("Verification HTTP " + response.statusCode() + ": " + response.body());
+                try {
+                    JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+                    if (json.has("detail")) {
+                        return json.get("detail").getAsString();
+                    }
+                } catch (Exception ignored) {}
+                return "HTTP " + response.statusCode();
+            }
         } catch (Exception e) {
             getLogger().warning("Error sending verification request: " + e.getMessage());
+            return e.getMessage();
         }
-        return false;
     }
 }
+

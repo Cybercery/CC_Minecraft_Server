@@ -84,6 +84,8 @@ banned-players.json
 banned-ips.json
 usercache.json
 *.jar
+target/
+**/target/
 
 # MinIO and storage data
 minio_data/

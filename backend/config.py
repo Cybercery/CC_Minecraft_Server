@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     MC_MAX_PLAYERS: int = 20
     MC_CONTAINER_NAME: str = "cloud-minecraft"
     MC_PUBLIC_ADDRESS: str = "localhost:25565"
+    MINECRAFT_ONLINE_MODE: bool = True
     RCON_PASSWORD: Optional[str] = None
     PLUGIN_API_KEY: Optional[str] = None
     CODE_HMAC_SECRET: Optional[str] = None

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiRequest } from '../api';
-import { Server, Play, Square, RotateCw, Terminal, Clock, Users, HardDrive } from 'lucide-react';
+import { Server, Play, Square, RotateCw, Terminal, Clock, Users, HardDrive, Info } from 'lucide-react';
 
 export const ServerControl: React.FC<{ userRole: string }> = ({ userRole }) => {
   const [status, setStatus] = useState<any>(null);
@@ -9,6 +9,17 @@ export const ServerControl: React.FC<{ userRole: string }> = ({ userRole }) => {
   const [rconOutput, setRconOutput] = useState('');
   const [loading, setLoading] = useState(false);
   const [actionMsg, setActionMsg] = useState<string | null>(null);
+  const [propertiesData, setPropertiesData] = useState<any>(null);
+  const [showConfig, setShowConfig] = useState(false);
+
+  const fetchProperties = async () => {
+    try {
+      const data = await apiRequest('/server/properties');
+      setPropertiesData(data);
+    } catch (e: any) {
+      console.error('Failed to load server properties:', e);
+    }
+  };
 
   const fetchStatusAndLogs = async () => {
     try {
@@ -139,7 +150,103 @@ export const ServerControl: React.FC<{ userRole: string }> = ({ userRole }) => {
             {status?.players_online || 0}
           </div>
         </div>
+
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginBottom: '8px' }}>AUTH MODE</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className={`badge ${status?.online_mode !== false ? 'badge-success' : 'badge-warning'}`}>
+              {status?.online_mode !== false ? 'ONLINE (Mojang)' : 'OFFLINE (Private Dev)'}
+            </span>
+          </div>
+        </div>
       </div>
+
+      {/* Server Mode Configuration & Properties */}
+      {canControl && (
+        <div className="glass-panel" style={{ padding: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Info size={18} color="#818cf8" />
+              <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Authentication Mode & Server Properties</h3>
+            </div>
+            <button
+              onClick={() => {
+                const next = !showConfig;
+                setShowConfig(next);
+                if (next && !propertiesData) {
+                  fetchProperties();
+                }
+              }}
+              className="btn btn-secondary"
+              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+            >
+              {showConfig ? 'Hide Details' : 'Inspect Config'}
+            </button>
+          </div>
+
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', lineHeight: '1.5' }}>
+            {status?.online_mode !== false ? (
+              <span>
+                <strong>Premium Mode Active:</strong> Players authenticate via Mojang/Microsoft session servers. Tamper-proof Mojang UUIDs are assigned and verified.
+              </span>
+            ) : (
+              <span>
+                <strong>Offline Testing Mode Active:</strong> Server accepts connections without Mojang authentication for private dev/testing. In-game verification still restricts unverified players until approved on this dashboard.
+              </span>
+            )}
+          </p>
+
+          {showConfig && (
+            <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: '8px', fontSize: '0.85rem' }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>How to Switch Online/Offline Mode:</div>
+                <ol style={{ paddingLeft: '20px', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <li>Edit <code>.env</code> file: set <code>MINECRAFT_ONLINE_MODE=true</code> (Premium) or <code>MINECRAFT_ONLINE_MODE=false</code> (Offline).</li>
+                  <li>Recreate container: <code>docker compose up -d minecraft</code></li>
+                  <li><code>server.properties</code> inside the <code>mc_data</code> volume will update automatically via <code>OVERRIDE_SERVER_PROPERTIES=true</code>.</li>
+                </ol>
+              </div>
+
+              <div style={{ background: 'rgba(0,0,0,0.3)', padding: '14px', borderRadius: '8px', fontSize: '0.85rem' }}>
+                <div style={{ fontWeight: 600, color: 'var(--text-main)', marginBottom: '6px' }}>Direct CLI Inspection Commands:</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Running container:</span>
+                    <pre style={{ margin: '4px 0 0 0', padding: '8px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', fontSize: '0.8rem', color: '#38bdf8' }}>
+                      docker exec cloud-minecraft cat /data/server.properties
+                    </pre>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Stopped container (safe inspection of volume):</span>
+                    <pre style={{ margin: '4px 0 0 0', padding: '8px', background: 'rgba(0,0,0,0.5)', borderRadius: '6px', fontSize: '0.8rem', color: '#38bdf8' }}>
+                      docker run --rm -v minecraft_server_project_mc_data:/data alpine cat /data/server.properties
+                    </pre>
+                  </div>
+                </div>
+              </div>
+
+              {propertiesData?.content && (
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: '6px' }}>
+                    Live server.properties ({propertiesData.source}):
+                  </div>
+                  <pre style={{
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    padding: '12px',
+                    background: 'rgba(0,0,0,0.6)',
+                    borderRadius: '8px',
+                    fontSize: '0.75rem',
+                    color: '#94a3b8'
+                  }}>
+                    {propertiesData.content}
+                  </pre>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* RCON Console */}
       {canControl && (

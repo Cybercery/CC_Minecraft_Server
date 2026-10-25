@@ -55,18 +55,87 @@ This creates a production `.env` file pre-populated with secure, cryptographical
 | `BACKUP_RETENTION_COUNT`| `10` | Number of recent backups retained before automated pruning |
 | `METRICS_RETENTION_DAYS`| `30` | Number of days historical metrics are preserved before purging |
 | `MC_MEMORY` | `2G` | Memory allocated to the Minecraft server container JVM |
+| `MINECRAFT_ONLINE_MODE` | `true` | `true` for Mojang/Microsoft session authentication; `false` for private offline dev/testing |
 
 ---
 
-## 3. Docker Compose Stack Deployment
+## 3. Server Configuration & Authentication Modes (Online vs. Offline)
 
-### 3.1 Initial Launch
+### 3.1 Understanding `server.properties` and the `mc_data` Volume
+The Minecraft `server.properties` file does **not** reside in the host project workspace. Here is why:
+- The `minecraft` service in `docker-compose.yml` mounts the server's working directory (`/data`) to a **named Docker volume** (`mc_data`). Named volumes are managed internally by the Docker engine (in Linux `/var/lib/docker/volumes/` or within the Docker Desktop VM on Windows/macOS) to ensure filesystem performance and prevent accidental world corruption.
+- The `itzg/minecraft-server` container dynamically generates `/data/server.properties` upon first startup based on the container's environment variables.
+- By setting `OVERRIDE_SERVER_PROPERTIES: "true"` in `docker-compose.yml`, the container entrypoint will safely apply environment variable updates (including `ONLINE_MODE`) to `/data/server.properties` upon every restart, while preserving world terrain, player data, and plugin configurations.
+
+### 3.2 Switching Authentication Modes
+
+#### Mode A: Premium Mode (Mojang Authentication — Default)
+- **Configuration** in `.env`:
+  ```bash
+  MINECRAFT_ONLINE_MODE=true
+  ```
+- **Behavior**: All client connections authenticate against Mojang/Microsoft session servers. Player identities and UUIDs are cryptographically validated by Mojang before the player joins.
+- **Apply & Restart**:
+  ```bash
+  docker compose up -d minecraft
+  ```
+
+#### Mode B: Private Offline Testing Mode
+- **Configuration** in `.env`:
+  ```bash
+  MINECRAFT_ONLINE_MODE=false
+  ```
+- **Behavior**: The server accepts client connections without contacting Mojang session servers. PaperMC assigns deterministic version-3 offline UUIDs based on the player's username (`OfflinePlayer:<username>`).
+- **Apply & Restart**:
+  ```bash
+  docker compose up -d minecraft
+  ```
+
+### 3.3 Inspecting Server Configuration
+
+#### When the Minecraft Container is Running:
+View the full active `server.properties`:
+```bash
+docker exec cloud-minecraft cat /data/server.properties
+```
+
+Check the active `online-mode` property specifically:
+```bash
+docker exec cloud-minecraft grep "online-mode" /data/server.properties
+```
+
+Or query via the authenticated backend API:
+```bash
+curl -H "Authorization: Bearer <TOKEN>" http://localhost:8000/server/properties
+```
+
+#### When the Minecraft Container is Stopped:
+To safely inspect configuration files directly from the Docker volume without starting the game server or modifying world data:
+```bash
+docker run --rm -v minecraft_server_project_mc_data:/data alpine cat /data/server.properties
+```
+Or filter for `online-mode`:
+```bash
+docker run --rm -v minecraft_server_project_mc_data:/data alpine grep "online-mode" /data/server.properties
+```
+
+### 3.4 Identity Handling & Security Limitations in Offline Mode
+- **In-Game Restrictions Remain Active**: Even in offline mode, unverified players are immobilized (frozen, blinded, chat/block interactions disabled) by the `CloudVerification` plugin upon joining.
+- **Web Verification Required**: To lift restrictions, the player must log in to the web dashboard (authenticated via Firebase), generate a temporary 6-character HMAC SHA-256 verification code (5-minute TTL, single-use), and run `/verify <code>` in-game.
+- **Offline Limitations**: In offline mode, client session certificates are not validated with Mojang. Therefore, anyone on the local network can start a Minecraft client with any username. While verification binds that in-game UUID to the web account, offline mode should **strictly be used in private, trusted development and testing environments**, never on public internet-facing servers.
+- **UUID Divergence**: Switching between online and offline modes changes player UUIDs from online Mojang UUIDs to offline MD5-hashed UUIDs. If switching modes, players may need to re-link using `/verify <code>`.
+
+---
+
+## 4. Docker Compose Stack Deployment
+
+### 4.1 Initial Launch
 Start all services in detached mode:
 ```bash
 docker compose up -d
 ```
 
-### 3.2 Service Health Verification
+### 4.2 Service Health Verification
 Check that all containers have reached a healthy state:
 ```bash
 docker compose ps
@@ -77,10 +146,9 @@ Expected status output:
 - `minio`: Up (healthy) on ports `9000`, `9001`
 - `minio-init`: Exited (0) (completed initial bucket and policy provisioning)
 - `minecraft`: Up (healthy) on port `25565`
-- `frontend`: Up on port `3000`
-- `docker-proxy`: Up on internal port `2375`
+- `frontend`: Up on port `5173`
 
-### 3.3 Verifying API Health
+### 4.3 Verifying API Health
 Run a curl probe against the health endpoint:
 ```bash
 curl http://localhost:8000/health
@@ -88,25 +156,19 @@ curl http://localhost:8000/health
 Expected response:
 ```json
 {
-  "status": "healthy",
-  "database": {
-    "status": "connected",
-    "schema_version": 6
-  },
-  "minio": {
-    "status": "healthy",
-    "bucket": "minecraft-backups"
-  }
+  "status": "ok",
+  "db_schema_version": 6,
+  "minio_healthy": true
 }
 ```
 
 ---
 
-## 4. Minecraft Verification Plugin Setup
+## 5. Minecraft Verification Plugin Setup
 
 The repository provides pre-configured plugin sources in `minecraft-plugin/`.
 
-### 4.1 Building the Plugin Jar
+### 5.1 Building the Plugin Jar
 If building from source:
 ```bash
 # Using native Maven:
@@ -116,28 +178,30 @@ mvn clean package
 # Or using the build script:
 bash scripts/build-plugin.sh
 ```
-The compiled artifact `minecraft-plugin-1.0.0.jar` will be placed in `minecraft-plugin/target/`.
+The compiled artifact `cloud-verification-1.0.0.jar` will be placed in `minecraft-plugin/target/`.
 
-### 4.2 Installing into the Minecraft Server
+### 5.2 Installing into the Minecraft Server
 Copy the plugin jar into the server's plugins volume:
 ```bash
-docker cp minecraft-plugin/target/minecraft-plugin-1.0.0.jar cc_minecraft_server-minecraft-1:/data/plugins/
+docker cp minecraft-plugin/target/cloud-verification-1.0.0.jar cloud-minecraft:/data/plugins/
 docker compose restart minecraft
 ```
 
-### 4.3 Plugin Configuration
+### 5.3 Plugin Configuration
 The plugin configuration `config.yml` connects to the FastAPI backend:
 ```yaml
-backend-url: "http://backend:8000"
-poll-interval-seconds: 3
-restriction-message: "§cYou must verify your account on the web portal to play!"
+api_url: "http://backend:8000/minecraft/plugin"
+api_key: ""
+unverified_freeze: true
+unverified_blindness: true
+poll_interval_seconds: 5
 ```
 
 ---
 
-## 5. Production Maintenance & Day-2 Operations
+## 6. Production Maintenance & Day-2 Operations
 
-### 5.1 Viewing Server Logs
+### 6.1 Viewing Server Logs
 - **FastAPI backend logs**:
   ```bash
   docker compose logs -f backend
@@ -169,7 +233,7 @@ sqlite3 backend/data/minecraft_management.db ".backup 'backend/data/backup_$(dat
 
 ---
 
-## 6. Teardown & Reset
+## 7. Teardown & Reset
 
 To cleanly stop the application while preserving worlds and data:
 ```bash
