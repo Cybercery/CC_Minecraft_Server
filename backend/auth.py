@@ -53,16 +53,16 @@ def verify_token(token: str) -> dict:
             email = parts[2] if len(parts) > 2 else "mock@example.com"
             return {"uid": uid, "email": email}
 
-    # First attempt: Firebase Admin SDK verify_id_token
+    # First attempt: Firebase Admin SDK verify_id_token (with 60s clock skew tolerance)
     try:
         get_firebase_app()
         from firebase_admin import auth
-        decoded = auth.verify_id_token(token)
+        decoded = auth.verify_id_token(token, clock_skew_seconds=60)
         return decoded
     except Exception as e:
         logger.info(f"Firebase Admin SDK verify failed ({e}), attempting public JWT verification...")
 
-    # Fallback: Verify JWT using PyJWT against Google's public certificates (no service account needed)
+    # Fallback: Verify JWT using PyJWT against Google's public certificates (with 60s leeway)
     try:
         import jwt
         # Unverified decode to inspect headers and claims
@@ -94,7 +94,8 @@ def verify_token(token: str) -> dict:
                 public_key,
                 algorithms=[alg or "RS256"],
                 audience=project_id,
-                issuer=f"https://securetoken.google.com/{project_id}"
+                issuer=f"https://securetoken.google.com/{project_id}",
+                leeway=60
             )
             return {
                 "uid": decoded.get("user_id") or decoded.get("sub"),
@@ -109,6 +110,16 @@ def verify_token(token: str) -> dict:
                 return {"uid": uid, "email": email}
     except Exception as fallback_err:
         logger.error(f"Public JWT fallback error: {fallback_err}")
+        if settings.ENVIRONMENT == "development":
+            try:
+                uid = unverified_claims.get("user_id") or unverified_claims.get("sub")
+                email = unverified_claims.get("email") or f"{uid}@example.com"
+                if uid:
+                    logger.warning(f"Development fallback after error: accepting token for {email} ({uid})")
+                    return {"uid": uid, "email": email}
+            except Exception:
+                pass
+
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

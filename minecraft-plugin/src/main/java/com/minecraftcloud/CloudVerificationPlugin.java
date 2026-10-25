@@ -59,8 +59,10 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
         this.blindness = getConfig().getBoolean("unverified_blindness", true);
 
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(4))
                 .build();
+
 
         getServer().getPluginManager().registerEvents(this, this);
         if (getCommand("verify") != null) {
@@ -212,6 +214,7 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
     private boolean checkPlayerLinked(UUID uuid) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
                     .uri(URI.create(apiUrl + "/player/" + uuid.toString()))
                     .header("X-Plugin-Api-Key", apiKey)
                     .GET()
@@ -239,6 +242,7 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
             payload.addProperty("minecraft_username", username);
 
             HttpRequest request = HttpRequest.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
                     .uri(URI.create(apiUrl + "/verify"))
                     .header("Content-Type", "application/json")
                     .header("X-Plugin-Api-Key", apiKey)
@@ -257,12 +261,14 @@ public class CloudVerificationPlugin extends JavaPlugin implements Listener, Com
                         return json.get("detail").getAsString();
                     }
                 } catch (Exception ignored) {}
-                return "HTTP " + response.statusCode();
+                String body = response.body();
+                return (body != null && !body.isBlank()) ? body.trim() : ("HTTP " + response.statusCode());
             }
         } catch (Exception e) {
             getLogger().warning("Error sending verification request: " + e.getMessage());
             return e.getMessage();
         }
     }
+
 }
 
